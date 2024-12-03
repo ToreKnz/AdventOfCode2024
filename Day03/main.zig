@@ -53,8 +53,8 @@ pub fn mulSum(text: []const u8, comptime apply_dos: bool, do: bool) u32 {
             }
         }
         if (idx == 0) continue;
-        const comma_idx = std.mem.indexOfScalar(u8, split[0..@min(split.len,4)], ',') orelse continue;
-        const bracket_idx = std.mem.indexOfScalar(u8, split[0..@min(split.len,8)], ')') orelse continue;
+        const comma_idx = std.mem.indexOfScalar(u8, split[0..@min(split.len, 4)], ',') orelse continue;
+        const bracket_idx = std.mem.indexOfScalar(u8, split[0..@min(split.len, 8)], ')') orelse continue;
         if (comma_idx > bracket_idx) continue;
         const left = split[0..comma_idx];
         const right = split[comma_idx + 1 .. bracket_idx];

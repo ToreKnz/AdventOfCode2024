@@ -38,52 +38,77 @@ pub fn parseInput() !Input {
 pub fn partOne(input: *Input) void {
     var sum: i32 = 0;
     for (input.reports.constSlice()) |report| {
-        if (reportIsSafe(report, false, 0)) sum += 1;
+        if (reportIsSafe(report)) sum += 1;
     }
     std.debug.print("{}\n", .{sum});
 }
 
 pub fn partTwo(input: *Input) void {
     var sum: i32 = 0;
-    outer: for (input.reports.constSlice()) |report| {
-        if (reportIsSafe(report, false, 0)) {
-            sum += 1;
-            continue;
-        }
-        for (0..report.len) |idx| {
-            if (reportIsSafe(report, true, idx)) {
-                sum += 1;
-                continue :outer;
-            }
-        }
+    for (input.reports.constSlice()) |report| {
+        if (reportIsSafeLoosened(report)) sum += 1;
     }
     std.debug.print("{}\n", .{sum});
 }
 
-pub fn reportIsSafe(report: Report, comptime skip: bool, skip_index: usize) bool {
-    if (comptime !skip) {
-        var increasing = false;
-        if (report.get(1) > report.get(0)) increasing = true;
-        for (0..report.len - 1) |idx| {
-            if ((increasing and report.get(idx + 1) <= report.get(idx)) or (!increasing and report.get(idx + 1) >= report.get(idx))) return false;
-            if (@abs(report.get(idx + 1) - report.get(idx)) > 3) return false;
-        }
-        return true;
-    }
+pub fn reportIsSafe(report: Report) bool {
     var increasing = false;
-    var left_idx: usize = 0;
-    var right_idx: usize = 1;
-    if (skip_index < 2) {
-        left_idx = 2;
-        right_idx = 3;
-    }
-    if (report.get(right_idx) > report.get(left_idx)) increasing = true;
+    if (report.get(1) > report.get(0)) increasing = true;
     for (0..report.len - 1) |idx| {
-        left_idx = if (skip_index == idx) idx + 1 else idx;
-        right_idx = if (skip_index == left_idx + 1) left_idx + 2 else left_idx + 1;
-        if (right_idx > report.len - 1) break;
-        if ((increasing and report.get(right_idx) <= report.get(left_idx)) or (!increasing and report.get(right_idx) >= report.get(left_idx))) return false;
-        if (@abs(report.get(right_idx) - report.get(left_idx)) > 3) return false;
+        if ((increasing and report.get(idx + 1) <= report.get(idx)) or (!increasing and report.get(idx + 1) >= report.get(idx))) return false;
+        if (@abs(report.get(idx + 1) - report.get(idx)) > 3) return false;
     }
     return true;
+}
+
+const Tuple = struct { left: usize, right: usize };
+
+pub fn reportIsSafeLoosened(report: Report) bool {
+    var increasing_count: u32 = 0;
+    var decreasing_count: u32 = 0;
+    var violating_tuples: [2]Tuple = undefined;
+    var violations: usize = 0;
+    for (0..report.len - 1) |i| {
+        if (report.get(i) < report.get(i + 1)) {
+            increasing_count += 1;
+        } else if (report.get(i) > report.get(i + 1)) {
+            decreasing_count += 1;
+        }
+    }
+    const increasing: bool = if (increasing_count >= report.len - 2) true else if (decreasing_count >= report.len - 2) false else return false;
+    for (0..report.len - 1) |i| {
+        if (report.get(i) == report.get(i + 1) or (increasing and report.get(i) > report.get(i + 1)) or (!increasing and report.get(i) < report.get(i + 1))) {
+            if (violations >= 2) return false;
+            violating_tuples[violations] = Tuple{ .left = i, .right = i + 1 };
+            violations += 1;
+        } else {
+            const diff = @abs(report.get(i) - report.get(i + 1));
+            if (diff < 1 or diff > 3) {
+                if (violations >= 2) return false;
+                violating_tuples[violations] = Tuple{ .left = i, .right = i + 1 };
+                violations += 1;
+            }
+        }
+    }
+    if (violations == 0) return true;
+    if (violations == 1) {
+        const violation = violating_tuples[0];
+        if (violation.left == 0 or violation.right == report.len - 1) return true;
+        if (tupleIsValid(report, increasing, Tuple{ .left = violation.left - 1, .right = violation.right }) or tupleIsValid(report, increasing, Tuple{ .left = violation.left, .right = violation.right + 1 })) return true;
+        return false;
+    }
+    if (violations == 2) {
+        const violation1 = violating_tuples[0];
+        const violation2 = violating_tuples[1];
+        if (violation1.right != violation2.left) return false;
+        if (tupleIsValid(report, increasing, Tuple{ .left = violation1.left, .right = violation1.left + 2 })) return true;
+    }
+    return false;
+}
+
+pub fn tupleIsValid(report: Report, increasing: bool, tuple: Tuple) bool {
+    const difference = @abs(report.get(tuple.left) - report.get(tuple.right));
+    if (difference < 1 or difference > 3) return false;
+    if ((increasing and report.get(tuple.left) < report.get(tuple.right)) or (!increasing and report.get(tuple.left) > report.get(tuple.right))) return true;
+    return false;
 }

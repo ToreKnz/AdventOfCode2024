@@ -46,10 +46,10 @@ pub fn partTwo(input: *Input) void {
     var sum: u32 = 0;
     var map: [100_000]u8 = std.mem.zeroes([100_000]u8);
     for (input.right.slice()) |val| {
-        map[@as(usize,@intCast(val))] += 1;
+        map[@as(usize, @intCast(val))] += 1;
     }
     for (input.left.slice()) |a| {
-        sum += map[@as(usize,@intCast(a))] * @as(u32, @intCast(a));
+        sum += map[@as(usize, @intCast(a))] * @as(u32, @intCast(a));
     }
     std.debug.print("{}\n", .{sum});
 }
