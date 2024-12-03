@@ -26,7 +26,7 @@ pub fn parseInput() !Input {
 }
 
 pub fn partOne(input: *Input) void {
-    const sum = mulSum(input.getSlice(), false, false);
+    const sum = mulSum(input.getSlice(), false, undefined);
     std.debug.print("{}\n", .{sum});
 }
 
