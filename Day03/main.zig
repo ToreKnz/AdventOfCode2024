@@ -31,16 +31,10 @@ pub fn partOne(input: *Input) void {
 }
 
 pub fn partTwo(input: *Input) void {
-    const res = mulSum(input.getSlice(), true, true);
-    std.debug.print("{}\n", .{res.sum});
+    const sum = mulSum(input.getSlice(), true, true);
+    std.debug.print("{}\n", .{sum});
 }
-
-const SumDoResult = struct {
-    sum: u32,
-    do: bool,
-};
-
-pub fn mulSum(text: []const u8, comptime apply_dos: bool, do: bool) if (apply_dos) SumDoResult else u32 {
+pub fn mulSum(text: []const u8, comptime apply_dos: bool, do: bool) u32 {
     var add = do;
     var splits = std.mem.splitSequence(u8, text, "mul(");
     var sum: u32 = 0;
@@ -70,9 +64,6 @@ pub fn mulSum(text: []const u8, comptime apply_dos: bool, do: bool) if (apply_do
         } else {
             sum += left_num * right_num;
         }
-    }
-    if (comptime apply_dos) {
-        return SumDoResult {.sum = sum, .do = add};
     }
     return sum;
 }
