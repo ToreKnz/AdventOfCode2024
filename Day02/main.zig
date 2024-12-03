@@ -10,24 +10,24 @@ pub fn List(comptime T: type) type {
     return std.BoundedArray(T, 1000);
 }
 
-pub fn main() void {
-    var input = parseInput();
+pub fn main() !void {
+    var input = try parseInput();
     partOne(&input);
     partTwo(&input);
 }
 
-pub fn parseInput() Input {
-    const input = std.fs.cwd().openFile("input.txt", .{}) catch unreachable;
+pub fn parseInput() !Input {
+    const input = try std.fs.cwd().openFile("Day02/input.txt", .{});
     defer input.close();
     var input_reader = std.io.bufferedReader(input.reader());
     var input_stream = input_reader.reader();
     var buffer: [1024]u8 = undefined;
     var reports = List(Report).init(0) catch unreachable;
-    while (input_stream.readUntilDelimiterOrEof(&buffer, '\n') catch unreachable) |nums| {
+    while (try input_stream.readUntilDelimiterOrEof(&buffer, '\n')) |nums| {
         var report = Report.init(0) catch unreachable;
         var splits = std.mem.splitScalar(u8, nums, ' ');
         while (splits.next()) |num_str| {
-            const num = std.fmt.parseInt(i32, num_str, 10) catch unreachable;
+            const num = try std.fmt.parseInt(i32, num_str, 10);
             report.append(num) catch unreachable;
         }
         reports.append(report) catch unreachable;
@@ -66,7 +66,7 @@ pub fn reportIsSafe(report: Report, comptime skip: bool, skip_index: usize) bool
         if (report.get(1) > report.get(0)) increasing = true;
         for (0..report.len - 1) |idx| {
             if ((increasing and report.get(idx + 1) <= report.get(idx)) or (!increasing and report.get(idx + 1) >= report.get(idx))) return false;
-            if (@abs(report.get(idx+1) - report.get(idx)) > 3) return false;
+            if (@abs(report.get(idx + 1) - report.get(idx)) > 3) return false;
         }
         return true;
     }
