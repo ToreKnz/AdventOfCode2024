@@ -1,8 +1,12 @@
 const std = @import("std");
 
 const Input = struct {
-    lines_internal: std.BoundedArray([1024 * 20]u8, 10),
-    lines_slices: std.BoundedArray([]u8, 10),
+    internal_buffer: [1024 * 100]u8,
+    len: usize,
+
+    fn getSlice(self: *Input) []const u8 {
+        return self.internal_buffer[0..self.len];
+    }
 };
 
 pub fn main() void {
@@ -16,32 +20,19 @@ pub fn parseInput() Input {
     defer input.close();
     var input_reader = std.io.bufferedReader(input.reader());
     var input_stream = input_reader.reader();
-    var buffer: [1024 * 20]u8 = undefined;
-    var lines = std.BoundedArray([1024 * 20] u8, 10).init(0) catch unreachable;
-    var line_slices = std.BoundedArray([]u8, 10).init(0) catch unreachable;
-    while (input_stream.readUntilDelimiterOrEof(&buffer, '\n') catch unreachable) |line| {
-        lines.append(buffer) catch unreachable;
-        const slice = lines.slice()[lines.len - 1][0..line.len];
-        line_slices.append(slice) catch unreachable;
-    }
-    return Input {.lines_internal = lines, .lines_slices = line_slices};
+    var buffer: [1024 * 100]u8 = undefined;
+    const len = input_stream.readAll(&buffer) catch unreachable;
+    return Input {.internal_buffer = buffer, .len = len};
 }
 
 pub fn partOne(input: *Input) void {
-    var sum: u32 = 0;
-    for (input.lines_slices.constSlice()) |line| sum += lineMulSum(line, false, false);
+    const sum = mulSum(input.getSlice(), false, false);
     std.debug.print("{}\n", .{sum});
 }
 
 pub fn partTwo(input: *Input) void {
-    var sum: u32 = 0;
-    var do = true;
-    for (input.lines_slices.constSlice()) |line| {
-        const res = lineMulSum(line, true, do);
-        do = res.do;
-        sum += res.sum;
-    }
-    std.debug.print("{}\n", .{sum});
+    const res = mulSum(input.getSlice(), true, true);
+    std.debug.print("{}\n", .{res.sum});
 }
 
 const SumDoResult = struct {
@@ -49,9 +40,9 @@ const SumDoResult = struct {
     do: bool,
 };
 
-pub fn lineMulSum(line: []const u8, comptime apply_dos: bool, do: bool) if (apply_dos) SumDoResult else u32 {
+pub fn mulSum(text: []const u8, comptime apply_dos: bool, do: bool) if (apply_dos) SumDoResult else u32 {
     var add = do;
-    var splits = std.mem.splitSequence(u8, line, "mul(");
+    var splits = std.mem.splitSequence(u8, text, "mul(");
     var sum: u32 = 0;
     var idx: u32 = 0;
     while (splits.next()) |split| : (idx += 1){
