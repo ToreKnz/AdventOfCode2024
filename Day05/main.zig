@@ -10,6 +10,7 @@ const Input = struct {
 
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
     const allocator = arena.allocator();
     var input = try parseInput(allocator);
     partOne(&input);
